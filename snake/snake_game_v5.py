@@ -211,7 +211,7 @@ def game_loop():
         display_score(length_of_snake - 1)
 
         # Power-up Handling
-        if poweruwtfp_x is not None and powerup_y is not None:
+        if powerup_x is not None and powerup_y is not None:
             powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
                 x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
             )
