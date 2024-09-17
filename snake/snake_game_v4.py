@@ -1,6 +1,5 @@
-import pygame
-import time
 import random
+import pygame
 
 # Initialisierung von Pygame
 pygame.init()
@@ -58,9 +57,11 @@ def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, bo
         if x == powerup_x and y == powerup_y:
             powerup_active = True
             boost_timer = pygame.time.get_ticks()
-            powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
-            powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
-            powerup_type = random.choice([1])  # Für dieses Beispiel nur Speed Boost, aber hier können weitere hinzugefügt werden
+            print(f"Power-up collected: Speed Boost at {powerup_x}, {powerup_y}")  # Debug message
+
+            # Setze die Power-up-Koordinaten auf None, damit es verschwindet
+            powerup_x, powerup_y = None, None
+
     return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
 
 def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed):
@@ -71,6 +72,31 @@ def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_spee
             powerup_active = False
             snake_speed = default_speed  # Normale Geschwindigkeit
     return powerup_active, snake_speed
+
+# Item Pool Logik
+def spawn_powerup(item_pool, last_spawn_time, next_spawn_interval, powerup_active):
+    current_time = pygame.time.get_ticks()
+
+    # Prüfe, ob genug Zeit vergangen ist und kein Power-up aktiv ist, um ein neues zu spawnen
+    if not powerup_active and current_time - last_spawn_time >= next_spawn_interval:
+        # Wähle ein zufälliges Power-up aus dem Pool
+        powerup_type = random.choice(item_pool)
+
+        # Wähle zufällige Positionen für das Power-up
+        powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
+        powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
+
+        # Debug message: Welches Power-up spawnt und wo
+        print(f"Power-up spawned: Type {powerup_type} at {powerup_x}, {powerup_y}")
+
+        # Setze den Timer für den nächsten Spawn (zwischen 10 und 30 Sekunden)
+        next_spawn_interval = random.randint(10000, 30000)  # in Millisekunden (10-30 Sekunden)
+
+        # Aktualisiere die Zeit des letzten Spawns
+        last_spawn_time = current_time
+
+        return powerup_x, powerup_y, powerup_type, last_spawn_time, next_spawn_interval
+    return None, None, None, last_spawn_time, next_spawn_interval
 
 # Hauptspiel-Schleife
 def game_loop():
@@ -103,10 +129,14 @@ def game_loop():
 
     # Power-up Variablen
     powerup_active = False
-    powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
-    powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
-    powerup_type = 1  # Start mit einem Speed Boost als Beispiel
+    powerup_x, powerup_y = None, None
+    powerup_type = None
     boost_timer = 0
+
+    # Power-up Timer & Item Pool
+    item_pool = [1]  # Füge hier weitere Power-ups hinzu (z. B. 2 für Slow Down)
+    last_spawn_time = 0
+    next_spawn_interval = random.randint(10000, 30000)  # 10 bis 30 Sekunden
 
     while not game_over:
 
@@ -166,9 +196,16 @@ def game_loop():
         display_score(length_of_snake - 1)
 
         # Power-up Handling
-        powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
-            x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
-        )
+        if powerup_x is not None and powerup_y is not None:
+            powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
+                x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
+            )
+
+        # Power-up Spawning (wenn kein Power-up aktiv ist)
+        if not powerup_active and powerup_x is None and powerup_y is None:
+            powerup_x, powerup_y, powerup_type, last_spawn_time, next_spawn_interval = spawn_powerup(
+                item_pool, last_spawn_time, next_spawn_interval, powerup_active
+            )
 
         # Power-up Effekte anwenden
         powerup_active, snake_speed = apply_powerup_effects(

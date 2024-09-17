@@ -1,5 +1,6 @@
 import random
 import pygame
+from datetime import datetime
 
 # Initialisierung von Pygame
 pygame.init()
@@ -23,7 +24,6 @@ pygame.display.set_caption('Snake Game')
 # Uhr und Geschwindigkeit
 clock = pygame.time.Clock()
 default_snake_speed = 15  # Ursprüngliche Geschwindigkeit
-snake_speed = default_snake_speed  # Aktuelle Geschwindigkeit
 
 # Snake-Variablen
 snake_size = 10
@@ -34,21 +34,28 @@ length_of_snake = 1
 font_style = pygame.font.SysFont("bahnschrift", 25)
 score_font = pygame.font.SysFont("comicsansms", 35)
 
+def log_debug_message(message):
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{timestamp}] {message}")
+
 # Funktion zum Anzeigen des Scores
 def display_score(score):
     value = score_font.render("Score: " + str(score), True, yellow)
     screen.blit(value, [0, 0])
+
 
 # Funktion zur Snake-Zeichnung
 def draw_snake(snake_size, snake_list):
     for x in snake_list:
         pygame.draw.rect(screen, black, [x[0], x[1], snake_size, snake_size])
 
+
 # Nachricht zentriert anzeigen
 def message(msg, color):
     mesg = font_style.render(msg, True, color)
     text_rect = mesg.get_rect(center=(width / 2, height / 2))  # Zentriert den Text
     screen.blit(mesg, text_rect)
+
 
 # Power-up Section
 def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer):
@@ -58,10 +65,13 @@ def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, bo
         if x == powerup_x and y == powerup_y:
             powerup_active = True
             boost_timer = pygame.time.get_ticks()
-            powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
-            powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
-            powerup_type = random.choice([1])  # Für dieses Beispiel nur Speed Boost, aber hier können weitere hinzugefügt werden
+            log_debug_message(f"Power-up collected: Speed Boost at {powerup_x}, {powerup_y}")
+
+            # Setze die Power-up-Koordinaten auf None, damit es verschwindet
+            powerup_x, powerup_y = None, None
+
     return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
+
 
 def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed):
     # Wenn der Speed Boost aktiv ist
@@ -72,10 +82,44 @@ def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_spee
             snake_speed = default_speed  # Normale Geschwindigkeit
     return powerup_active, snake_speed
 
+
+# Item Pool Logik
+def spawn_powerup(item_pool, last_spawn_time, next_spawn_interval, powerup_active, spawn_timer):
+    current_time = pygame.time.get_ticks()
+
+    # Prüfe, ob genug Zeit vergangen ist und kein Power-up aktiv ist, um ein neues zu spawnen
+    if not powerup_active and current_time - last_spawn_time >= next_spawn_interval:
+        # Wähle ein zufälliges Power-up aus dem Pool
+        powerup_type = random.choice(item_pool)
+
+        # Wähle zufällige Positionen für das Power-up
+        powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
+        powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
+
+        # Debug message: Welches Power-up spawnt und wo
+        log_debug_message(f"Power-up spawned: Type {powerup_type} at {powerup_x}, {powerup_y}")
+
+        # Setze den Timer für den nächsten Spawn (zwischen 10 und 30 Sekunden)
+        next_spawn_interval = random.randint(10000, 30000)  # in Millisekunden (10-30 Sekunden)
+        spawn_timer = random.randint(3000, 10000)  # 3 bis 10 Sekunden für das Power-up
+
+        # Aktualisiere die Zeit des letzten Spawns
+        last_spawn_time = current_time
+
+        return powerup_x, powerup_y, powerup_type, last_spawn_time, next_spawn_interval, spawn_timer
+
+    # Falls kein Power-up gespawnt wird, gib den aktuellen Timer zurück
+    return None, None, None, last_spawn_time, next_spawn_interval, spawn_timer
+
+
 # Hauptspiel-Schleife
 def game_loop():
     game_over = False
     game_close = False
+
+    # Initialisierung der Snake-Geschwindigkeit beim Start oder Respawn
+    global snake_speed
+    snake_speed = default_snake_speed  # Stelle sicher, dass die Geschwindigkeit zurückgesetzt wird
 
     # Startposition der Snake
     x = width / 2
@@ -99,12 +143,15 @@ def game_loop():
 
     # Power-up Variablen
     powerup_active = False
-    powerup_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
-    powerup_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
-    powerup_type = 1  # Start mit einem Speed Boost als Beispiel
+    powerup_x, powerup_y = None, None
+    powerup_type = None
     boost_timer = 0
 
-    global snake_speed  # Diese Variable wird global verwendet
+    # Power-up Timer & Item Pool
+    item_pool = [1]  # Füge hier weitere Power-ups hinzu (z. B. 2 für Slow Down)
+    last_spawn_time = 0
+    next_spawn_interval = random.randint(10000, 30000)  # 10 bis 30 Sekunden
+    spawn_timer = 0  # Timer für das Verschwinden des Power-ups
 
     while not game_over:
 
@@ -120,8 +167,7 @@ def game_loop():
                         game_over = True
                         game_close = False
                     if event.key == pygame.K_SPACE:
-                        snake_speed = default_snake_speed
-                        game_loop()
+                        game_loop()  # Neustart des Spiels
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -165,9 +211,22 @@ def game_loop():
         display_score(length_of_snake - 1)
 
         # Power-up Handling
-        powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
-            x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
-        )
+        if poweruwtfp_x is not None and powerup_y is not None:
+            powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
+                x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
+            )
+
+            # Überprüfen, ob das Power-up schon länger als der Timer existiert
+            time_elapsed = pygame.time.get_ticks() - last_spawn_time
+            if time_elapsed >= spawn_timer:
+                log_debug_message(f"Power-up disappeared after {time_elapsed / 1000:.2f} seconds")  # Dauer in Sekunden
+                powerup_x, powerup_y = None, None  # Entferne das Power-up nach Ablauf des Timers
+
+        # Power-up Spawning (wenn kein Power-up aktiv ist)
+        if not powerup_active and powerup_x is None and powerup_y is None:
+            powerup_x, powerup_y, powerup_type, last_spawn_time, next_spawn_interval, spawn_timer = spawn_powerup(
+                item_pool, last_spawn_time, next_spawn_interval, powerup_active, spawn_timer
+            )
 
         # Power-up Effekte anwenden
         powerup_active, snake_speed = apply_powerup_effects(
@@ -189,6 +248,7 @@ def game_loop():
 
     pygame.quit()
     quit()
+
 
 # Spiel starten
 game_loop()
