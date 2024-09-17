@@ -17,7 +17,7 @@ Dieses Snake-Spiel ist in Python unter Verwendung des Pygame-Frameworks implemen
 
 1. Klone das Repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/TravikSkoot/Snake-PyGame.git
    ```
 2. Installiere die Abhängigkeiten:
    ```bash
