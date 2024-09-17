@@ -75,4 +75,4 @@ debug_mode = True
 
 ## Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz. Weitere Details finden sich in der [LICENSE](LICENSE) Datei.
+Dieses Projekt steht unter der MIT-Lizenz. Weitere Details finden sich in der [LICENSE](LICENSE.md) Datei.
