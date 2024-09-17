@@ -3,6 +3,9 @@ import time
 import random
 from datetime import datetime  # Für Zeitstempel in Debug-Nachrichten
 
+# Debug-Modus aktivieren oder deaktivieren
+debug_mode = True
+
 # Initialisierung von Pygame
 pygame.init()
 
@@ -13,6 +16,17 @@ black = (0, 0, 0)
 red = (213, 50, 80)
 green = (0, 255, 0)
 blue = (50, 153, 213)
+orange = (255, 165, 0)  # Neue Farbe
+purple = (160, 32, 240)  # Neue Farbe
+pink = (255, 105, 180)  # Neue Farbe
+light_blue = (173, 216, 230)  # Neue Farbe
+
+# Setze eine zufällige Hintergrundfarbe aus einer Liste
+background_colors = [blue, light_blue, purple, pink]
+background_color = random.choice(background_colors)
+
+# Definiere die Farbauswahl für die Snake
+snake_colors = [red, orange, yellow, green, blue, purple, pink]
 
 # Bildschirmgröße
 width = 600
@@ -31,21 +45,66 @@ snake_size = 10
 snake_list = []
 length_of_snake = 1
 
+# Neue Schriftarten für den Game-Over-Bildschirm
+large_font_style = pygame.font.SysFont("comic sans ms", 50)  # Große Schrift
+small_font_style = pygame.font.SysFont("comic sans ms", 25)  # Kleinere Schrift
+
+# Angepasste Funktion für den Game-Over-Bildschirm
+def game_over_message(high_score):
+    screen.fill(blue)
+
+    # Große Nachricht "GAME OVER!"
+    game_over_text = large_font_style.render("GAME OVER!", True, red)
+    verlor_rect = game_over_text.get_rect(center=(width / 2, height / 4))
+    screen.blit(game_over_text, verlor_rect)
+
+    # Kleinere Nachricht "Highscore"
+    highscore_text = small_font_style.render(f"Highscore: {high_score}", True, yellow)
+    highscore_rect = highscore_text.get_rect(center=(width / 2, height / 2 - 30))
+    screen.blit(highscore_text, highscore_rect)
+
+    # Kleinere Nachricht "Nochmal: Leertaste"
+    nochmal_text = small_font_style.render("Nochmal: Leertaste", True, yellow)
+    nochmal_rect = nochmal_text.get_rect(center=(width / 2, height / 2))
+    screen.blit(nochmal_text, nochmal_rect)
+
+    # Kleinere Nachricht "Beenden: Escape"
+    beenden_text = small_font_style.render("Beenden: Escape", True, yellow)
+    beenden_rect = beenden_text.get_rect(center=(width / 2, (height / 2) + 50))
+    screen.blit(beenden_text, beenden_rect)
+
+    pygame.display.update()
+
+# Highscore speichern und laden
+def load_high_score():
+    try:
+        with open("highscore.txt", "r") as file:
+            return int(file.read())
+    except (FileNotFoundError, ValueError):
+        return 0  # Wenn die Datei nicht existiert oder leer ist
+
+
+def save_high_score(score):
+    with open("highscore.txt", "w") as file:
+        file.write(str(score))
+
+
 # Schriftarten
-font_style = pygame.font.SysFont("bahnschrift", 25)
-score_font = pygame.font.SysFont("comicsansms", 35)
+font_style = pygame.font.SysFont("comic sans ms", 25)
+score_font = pygame.font.SysFont("calibri", 35)
 
 
-# Funktion zum Anzeigen des Scores
-def display_score(score):
-    value = score_font.render("Score: " + str(score), True, yellow)
+# Funktion zum Anzeigen des Scores und des Highscores
+def display_score(score, high_score):
+    value = score_font.render("Score: " + str(score) + "  Highscore: " + str(high_score), True, yellow)
     screen.blit(value, [0, 0])
 
 
 # Funktion zur Snake-Zeichnung
 def draw_snake(snake_size, snake_list):
+    color = random.choice(snake_colors)
     for x in snake_list:
-        pygame.draw.rect(screen, black, [x[0], x[1], snake_size, snake_size])
+        pygame.draw.rect(screen, color, [x[0], x[1], snake_size, snake_size])
 
 
 # Nachricht zentriert anzeigen
@@ -63,7 +122,7 @@ def log_debug_message(message):
 
 # Power-up Section
 def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer):
-    # Power-up Typen: 1 = Speed Boost, 2 = Slow Down, etc.
+    # Power-up Typen: 1 = Speed Boost, 2 = Slowness
     if powerup_type == 1:  # Speed Boost
         pygame.draw.rect(screen, red, [powerup_x, powerup_y, snake_size, snake_size])  # Power-up als rotes Quadrat
         if x == powerup_x and y == powerup_y:
@@ -74,16 +133,34 @@ def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, bo
             # Setze die Power-up-Koordinaten auf None, damit es verschwindet
             powerup_x, powerup_y = None, None
 
+    if powerup_type == 2:  # Slowness
+        pygame.draw.rect(screen, blue, [powerup_x, powerup_y, snake_size, snake_size])  # Power-up als blaues Quadrat
+        if x == powerup_x and y == powerup_y:
+            powerup_active = True
+            boost_timer = pygame.time.get_ticks()
+            log_debug_message(f"Power-up collected: Slowness at {powerup_x}, {powerup_y}")  # Debug message
+
+            # Setze die Power-up-Koordinaten auf None, damit es verschwindet
+            powerup_x, powerup_y = None, None
+
     return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
 
 
-def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed):
+def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed, powerup_type):
     # Wenn der Speed Boost aktiv ist
-    if powerup_active:
+    if powerup_active and powerup_type == 1:
         snake_speed = 25  # Erhöhte Geschwindigkeit
         if pygame.time.get_ticks() - boost_timer > 5000:  # 5 Sekunden Boost
             powerup_active = False
             snake_speed = default_speed  # Normale Geschwindigkeit
+
+    # Wenn das Slowness-Item aktiv ist
+    if powerup_active and powerup_type == 2:
+        snake_speed = 5  # Verlangsamte Geschwindigkeit
+        if pygame.time.get_ticks() - boost_timer > 5000:  # 5 Sekunden Verlangsamung
+            powerup_active = False
+            snake_speed = default_speed  # Normale Geschwindigkeit
+
     return powerup_active, snake_speed
 
 
@@ -121,6 +198,11 @@ def game_loop():
     game_over = False
     game_close = False
 
+    global length_of_snake
+
+    # Highscore laden beim Start
+    high_score = load_high_score()
+
     # Initialisierung der Snake-Geschwindigkeit beim Start oder Respawn
     global snake_speed
     snake_speed = default_snake_speed  # Stelle sicher, dass die Geschwindigkeit zurückgesetzt wird
@@ -141,18 +223,16 @@ def game_loop():
     food_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
     food_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
 
-    global length_of_snake
-    length_of_snake = 1
     snake_list = []
 
-    # Power-up Variablen (zurücksetzen bei Neustart)
+    # Power-up Variablen
     powerup_active = False
     powerup_x, powerup_y = None, None
     powerup_type = None
     boost_timer = 0
 
-    # Power-up Timer & Item Pool (zurücksetzen bei Neustart)
-    item_pool = [1]  # Füge hier weitere Power-ups hinzu (z. B. 2 für Slow Down)
+    # Power-up Timer & Item Pool
+    item_pool = [1, 2]  # 1 = Speed Boost, 2 = Slowness
     last_spawn_time = 0
     next_spawn_interval = random.randint(10000, 30000)  # 10 bis 30 Sekunden
     spawn_timer = 0  # Timer für das Verschwinden des Power-ups
@@ -160,10 +240,7 @@ def game_loop():
     while not game_over:
 
         while game_close:
-            screen.fill(blue)
-            message("Verloren! Leertaste: Nochmal - Escape: Beenden", red)
-            display_score(length_of_snake - 1)
-            pygame.display.update()
+            game_over_message(high_score)  # Zeige den Game-Over-Bildschirm mit der neuen Funktion
 
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
@@ -178,7 +255,7 @@ def game_loop():
                         boost_timer = 0
                         spawn_timer = 0
                         last_spawn_time = pygame.time.get_ticks()  # Setze den letzten Spawn-Timer auf den aktuellen Zeitpunkt
-
+                        length_of_snake = 1  # Zurücksetzen der Snake-Länge
                         game_loop()  # Neustart des Spiels
 
         for event in pygame.event.get():
@@ -204,7 +281,10 @@ def game_loop():
             game_close = True
         x += x_change
         y += y_change
-        screen.fill(blue)
+
+        # 🟢 Hintergrund zeichnen
+        screen.fill(background_color)
+
         pygame.draw.rect(screen, green, [food_x, food_y, snake_size, snake_size])
 
         snake_head = []
@@ -220,7 +300,16 @@ def game_loop():
                 game_close = True
 
         draw_snake(snake_size, snake_list)
-        display_score(length_of_snake - 1)
+
+        # Update Fenstertitel mit aktuellem Score, Highscore und FPS (wenn im Debug-Modus)
+        if debug_mode:
+            fps = clock.get_fps()
+            pygame.display.set_caption(
+                f"Snake Game - Score: {length_of_snake - 1}  Highscore: {high_score}  FPS: {fps:.2f}")
+        else:
+            pygame.display.set_caption(f"Snake Game - Score: {length_of_snake - 1}  Highscore: {high_score}")
+
+        display_score(length_of_snake - 1, high_score)
 
         # Power-up Handling
         if powerup_x is not None and powerup_y is not None:
@@ -242,7 +331,7 @@ def game_loop():
 
         # Power-up Effekte anwenden
         powerup_active, snake_speed = apply_powerup_effects(
-            powerup_active, snake_speed, boost_timer, default_snake_speed
+            powerup_active, snake_speed, boost_timer, default_snake_speed, powerup_type
         )
 
         pygame.display.update()

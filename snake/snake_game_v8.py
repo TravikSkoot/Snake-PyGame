@@ -31,14 +31,29 @@ snake_size = 10
 snake_list = []
 length_of_snake = 1
 
+
+# Highscore speichern und laden
+def load_high_score():
+    try:
+        with open("highscore.txt", "r") as file:
+            return int(file.read())
+    except (FileNotFoundError, ValueError):
+        return 0  # Wenn die Datei nicht existiert oder leer ist
+
+
+def save_high_score(score):
+    with open("highscore.txt", "w") as file:
+        file.write(str(score))
+
+
 # Schriftarten
 font_style = pygame.font.SysFont("bahnschrift", 25)
 score_font = pygame.font.SysFont("comicsansms", 35)
 
 
-# Funktion zum Anzeigen des Scores
-def display_score(score):
-    value = score_font.render("Score: " + str(score), True, yellow)
+# Funktion zum Anzeigen des Scores und des Highscores
+def display_score(score, high_score):
+    value = score_font.render("Score: " + str(score) + "  Highscore: " + str(high_score), True, yellow)
     screen.blit(value, [0, 0])
 
 
@@ -121,6 +136,11 @@ def game_loop():
     game_over = False
     game_close = False
 
+    global length_of_snake
+
+    # Highscore laden beim Start
+    high_score = load_high_score()
+
     # Initialisierung der Snake-Geschwindigkeit beim Start oder Respawn
     global snake_speed
     snake_speed = default_snake_speed  # Stelle sicher, dass die Geschwindigkeit zurückgesetzt wird
@@ -141,17 +161,15 @@ def game_loop():
     food_x = round(random.randrange(0, width - snake_size) / 10.0) * 10.0
     food_y = round(random.randrange(0, height - snake_size) / 10.0) * 10.0
 
-    global length_of_snake
-    length_of_snake = 1
     snake_list = []
 
-    # Power-up Variablen (zurücksetzen bei Neustart)
+    # Power-up Variablen
     powerup_active = False
     powerup_x, powerup_y = None, None
     powerup_type = None
     boost_timer = 0
 
-    # Power-up Timer & Item Pool (zurücksetzen bei Neustart)
+    # Power-up Timer & Item Pool
     item_pool = [1]  # Füge hier weitere Power-ups hinzu (z. B. 2 für Slow Down)
     last_spawn_time = 0
     next_spawn_interval = random.randint(10000, 30000)  # 10 bis 30 Sekunden
@@ -161,8 +179,13 @@ def game_loop():
 
         while game_close:
             screen.fill(blue)
+            # Aktualisiere den Highscore, falls der aktuelle Score größer ist
+            if length_of_snake - 1 > high_score:
+                high_score = length_of_snake - 1
+                save_high_score(high_score)  # Highscore in Datei speichern
+
             message("Verloren! Leertaste: Nochmal - Escape: Beenden", red)
-            display_score(length_of_snake - 1)
+            display_score(length_of_snake - 1, high_score)
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -171,14 +194,7 @@ def game_loop():
                         game_over = True
                         game_close = False
                     if event.key == pygame.K_SPACE:
-                        # Rücksetzen der Power-up-Variablen beim Neustart
-                        powerup_active = False
-                        powerup_x, powerup_y = None, None
-                        powerup_type = None
-                        boost_timer = 0
-                        spawn_timer = 0
-                        last_spawn_time = pygame.time.get_ticks()  # Setze den letzten Spawn-Timer auf den aktuellen Zeitpunkt
-
+                        length_of_snake = 1  # Zurücksetzen der Snake-Länge
                         game_loop()  # Neustart des Spiels
 
         for event in pygame.event.get():
@@ -220,7 +236,11 @@ def game_loop():
                 game_close = True
 
         draw_snake(snake_size, snake_list)
-        display_score(length_of_snake - 1)
+
+        # Update Fenstertitel mit aktuellem Score und Highscore
+        pygame.display.set_caption(f"Snake Game - Score: {length_of_snake - 1}  Highscore: {high_score}")
+
+        display_score(length_of_snake - 1, high_score)
 
         # Power-up Handling
         if powerup_x is not None and powerup_y is not None:
