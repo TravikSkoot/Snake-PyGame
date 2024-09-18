@@ -20,9 +20,8 @@ purple = (160, 32, 240)  # Neue Farbe
 pink = (255, 105, 180)  # Neue Farbe
 light_blue = (173, 216, 230)  # Neue Farbe
 
-# Setze eine zufällige Hintergrundfarbe aus einer Liste
-background_colors = [blue, light_blue, purple, pink]
-background_color = random.choice(background_colors)
+# Setze Hintergrundfarbe
+background_color = blue
 
 # Bildschirmgröße
 width = 600
@@ -46,6 +45,8 @@ default_snake_speed = 15  # Ursprüngliche Geschwindigkeit
 food_color = red
 powerup_color_1 = blue
 powerup_color_2 = orange
+powerup_color_3 = purple
+
 
 # Neue Schriftarten für den Game-Over-Bildschirm
 large_font_style = pygame.font.SysFont("comic sans ms", 50)  # Große Schrift
@@ -122,47 +123,56 @@ def log_debug_message(message):
 
 
 # Power-up Section
-def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer):
-    # Power-up Typen: 1 = Speed Boost, 2 = Slowness
+def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible):
+    # Power-up Typen: 1 = Speed Boost, 2 = Slowness, 3 = Unsterblichkeit
     if powerup_type == 1:  # Speed Boost
         pygame.draw.rect(screen, powerup_color_1, [powerup_x, powerup_y, snake_size, snake_size])  # Power-up als rotes Quadrat
         if x == powerup_x and y == powerup_y:
             powerup_active = True
             boost_timer = pygame.time.get_ticks()
-            log_debug_message(f"Power-up collected: Speed Boost at {powerup_x}, {powerup_y}")  # Debug message
+            log_debug_message(f"Power-up collected: Speed Boost at {powerup_x}, {powerup_y}")
+            powerup_x, powerup_y = None, None  # Entferne Power-up
 
-            # Setze die Power-up-Koordinaten auf None, damit es verschwindet
-            powerup_x, powerup_y = None, None
-
-    if powerup_type == 2:  # Slowness
-        pygame.draw.rect(screen, powerup_color_2, [powerup_x, powerup_y, snake_size, snake_size])  # Power-up als blaues Quadrat
+    elif powerup_type == 2:  # Slowness
+        pygame.draw.rect(screen, powerup_color_2, [powerup_x, powerup_y, snake_size, snake_size])
         if x == powerup_x and y == powerup_y:
             powerup_active = True
             boost_timer = pygame.time.get_ticks()
-            log_debug_message(f"Power-up collected: Slowness at {powerup_x}, {powerup_y}")  # Debug message
-
-            # Setze die Power-up-Koordinaten auf None, damit es verschwindet
+            log_debug_message(f"Power-up collected: Slowness at {powerup_x}, {powerup_y}")
             powerup_x, powerup_y = None, None
 
-    return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
+    elif powerup_type == 3:  # Unsterblichkeit
+        pygame.draw.rect(screen, powerup_color_3, [powerup_x, powerup_y, snake_size, snake_size])  # Power-up als gelbes Quadrat
+        if x == powerup_x and y == powerup_y:
+            invincible = True
+            boost_timer = pygame.time.get_ticks()
+            log_debug_message(f"Power-up collected: Invincibility at {powerup_x}, {powerup_y}")
+            powerup_x, powerup_y = None, None  # Entferne Power-up
+
+    return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible
 
 
-def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed, powerup_type):
+def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed, powerup_type, invincible):
     # Wenn der Speed Boost aktiv ist
     if powerup_active and powerup_type == 1:
-        snake_speed = 25  # Erhöhte Geschwindigkeit
+        snake_speed = 25
         if pygame.time.get_ticks() - boost_timer > 5000:  # 5 Sekunden Boost
             powerup_active = False
-            snake_speed = default_speed  # Normale Geschwindigkeit
+            snake_speed = default_speed
 
     # Wenn das Slowness-Item aktiv ist
-    if powerup_active and powerup_type == 2:
-        snake_speed = 5  # Verlangsamte Geschwindigkeit
-        if pygame.time.get_ticks() - boost_timer > 5000:  # 5 Sekunden Verlangsamung
+    elif powerup_active and powerup_type == 2:
+        snake_speed = 5
+        if pygame.time.get_ticks() - boost_timer > 5000:
             powerup_active = False
-            snake_speed = default_speed  # Normale Geschwindigkeit
+            snake_speed = default_speed
 
-    return powerup_active, snake_speed
+    # Unsterblichkeitseffekt
+    elif invincible:
+        if pygame.time.get_ticks() - boost_timer > 5000:  # 5 Sekunden Unsterblichkeit
+            invincible = False
+
+    return powerup_active, snake_speed, invincible
 
 
 # Item Pool Logik
@@ -231,9 +241,10 @@ def game_loop():
     powerup_x, powerup_y = None, None
     powerup_type = None
     boost_timer = 0
+    invincible = False  # Unsterblichkeitsstatus
 
     # Power-up Timer & Item Pool
-    item_pool = [1, 2]  # 1 = Speed Boost, 2 = Slowness
+    item_pool = [1, 2, 3]  # 1 = Speed Boost, 2 = Slowness, 3 = Unsterblichkeit
     last_spawn_time = 0
     next_spawn_interval = random.randint(10000, 30000)  # 10 bis 30 Sekunden
     spawn_timer = 0  # Timer für das Verschwinden des Power-ups
@@ -259,6 +270,7 @@ def game_loop():
                         powerup_x, powerup_y = None, None
                         powerup_type = None
                         boost_timer = 0
+                        invincible = False
                         spawn_timer = 0
                         last_spawn_time = pygame.time.get_ticks()  # Setze den letzten Spawn-Timer auf den aktuellen Zeitpunkt
                         length_of_snake = 1  # Zurücksetzen der Snake-Länge
@@ -284,7 +296,8 @@ def game_loop():
                     x_change = 0
 
         if x >= width or x < 0 or y >= height or y < 0:
-            game_close = True
+            if not invincible:  # Wenn Unsterblichkeit aktiv ist, keine Kollisionen beachten
+                game_close = True
         x += x_change
         y += y_change
 
@@ -303,7 +316,8 @@ def game_loop():
 
         for segment in snake_list[:-1]:
             if segment == snake_head:
-                game_close = True
+                if not invincible:  # Wenn Unsterblichkeit aktiv ist, keine Kollisionen beachten
+                    game_close = True
 
         draw_snake(snake_size, snake_list)
 
@@ -319,14 +333,13 @@ def game_loop():
 
         # Power-up Handling
         if powerup_x is not None and powerup_y is not None:
-            powerup_active, powerup_x, powerup_y, powerup_type, boost_timer = handle_powerups(
-                x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer
+            powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible = handle_powerups(
+                x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible
             )
 
             # Überprüfen, ob das Power-up schon länger als der Timer existiert
             time_elapsed = pygame.time.get_ticks() - last_spawn_time
             if time_elapsed >= spawn_timer:
-                log_debug_message(f"Power-up disappeared after {time_elapsed / 1000:.2f} seconds")  # Dauer in Sekunden
                 powerup_x, powerup_y = None, None  # Entferne das Power-up nach Ablauf des Timers
 
         # Power-up Spawning (wenn kein Power-up aktiv ist)
@@ -336,8 +349,8 @@ def game_loop():
             )
 
         # Power-up Effekte anwenden
-        powerup_active, snake_speed = apply_powerup_effects(
-            powerup_active, snake_speed, boost_timer, default_snake_speed, powerup_type
+        powerup_active, snake_speed, invincible = apply_powerup_effects(
+            powerup_active, snake_speed, boost_timer, default_snake_speed, powerup_type, invincible
         )
 
         pygame.display.update()
