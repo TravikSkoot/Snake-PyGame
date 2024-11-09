@@ -87,14 +87,14 @@ def display_powerup_timer(boost_timer, duration):
 # Highscore speichern und laden
 def load_high_score():
     try:
-        with open("highscore.txt", "r") as file:
+        with open("../highscore.txt", "r") as file:
             return int(file.read())
     except (FileNotFoundError, ValueError):
         return 0  # Wenn die Datei nicht existiert oder leer ist
 
 
 def save_high_score(score):
-    with open("highscore.txt", "w") as file:
+    with open("../highscore.txt", "w") as file:
         file.write(str(score))
 
 
