@@ -43,7 +43,7 @@ Die vollständige Roadmap und geplante Features sind in der [ROADMAP.md](ROADMAP
 - [x] **Mehrere Schwierigkeitsgrade**:
   - Schwierigkeitsgrade wie "Leicht", "Mittel" und "Schwer" implementieren, die unterschiedliche Startgeschwindigkeiten und Power-up-Frequenzen haben.
 
-- [ x ] **Snake-Geschwindigkeit balancieren**:
+- [x] **Snake-Geschwindigkeit balancieren**:
   - Die Geschwindigkeit der Snake sollte sich alle 5 Punkte erhöhen, allerdings muss die Balance überprüft werden.
   - Maximalgeschwindigkeit anpassen, damit das Spiel nicht zu schwer wird.
  
