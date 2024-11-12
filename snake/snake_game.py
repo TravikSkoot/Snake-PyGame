@@ -157,7 +157,6 @@ def log_debug_message(message):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{timestamp}] {message}")
 
-
 # Power-up Section
 def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible):
     # Power-up Typen: 1 = Speed Boost, 2 = Slowness, 3 = Unsterblichkeit
@@ -187,7 +186,6 @@ def handle_powerups(x, y, powerup_active, powerup_x, powerup_y, powerup_type, bo
 
     return powerup_active, powerup_x, powerup_y, powerup_type, boost_timer, invincible
 
-
 def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_speed, powerup_type, invincible):
     # Wenn der Speed Boost aktiv ist
     if powerup_active and powerup_type == 1:
@@ -209,7 +207,6 @@ def apply_powerup_effects(powerup_active, snake_speed, boost_timer, default_spee
             invincible = False
 
     return powerup_active, snake_speed, invincible
-
 
 # Item Pool Logik
 def spawn_powerup(item_pool, last_spawn_time, next_spawn_interval, powerup_active, spawn_timer):
@@ -238,7 +235,6 @@ def spawn_powerup(item_pool, last_spawn_time, next_spawn_interval, powerup_activ
 
     # Falls kein Power-up gespawnt wird, gib den aktuellen Timer zurück
     return None, None, None, last_spawn_time, next_spawn_interval, spawn_timer
-
 
 # Hauptspiel-Schleife
 def game_loop():
