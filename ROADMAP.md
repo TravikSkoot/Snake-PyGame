@@ -29,10 +29,10 @@
 - 🏆 **Highscore-Funktion**: Erfolgreich implementiert und speichert zuverlässig den höchsten Punktestand. Der Highscore wird im `AppData`-Ordner des Benutzers unter `SnakePyGame` gespeichert, was sicherstellt, dass der Fortschritt über mehrere Sitzungen erhalten bleibt.
 - 💪 **Verschiedene Power-Ups**: Power-Ups wie Geschwindigkeit, Langsamkeit und Unsterblichkeit wurden erfolgreich integriert.
 - 🚀 **Dynamische Geschwindigkeitsanpassung**: Die Geschwindigkeit der Schlange erhöht sich dynamisch, was für ein herausforderndes Gameplay sorgt.
-- ⏸️ **Pause-Funktion**: Spieler können das Spiel jederzeit pausieren und mit der `P`-Taste fortsetzen.
+- ⏲️ **Power-Up Timer-Anzeige**: Eine visuelle Anzeige für die Dauer aktiver Power-Ups konnte nicht rechtzeitig umgesetzt werden.
 
 ### ⏳ Nicht erreichte Ziele
-- ⏲️ **Power-Up Timer-Anzeige**: Eine visuelle Anzeige für die Dauer aktiver Power-Ups konnte nicht rechtzeitig umgesetzt werden.
+- ⏸️ **Pause-Funktion**: Spieler können das Spiel jederzeit pausieren und mit der `P`-Taste fortsetzen.
 - 🧩 **Schwierigkeitsgrade**: Verschiedene Schwierigkeitsstufen (Leicht, Mittel, Schwer) konnten nicht integriert werden.
 - 🎨 **Grafik- und Soundeffekte**: Verbesserte Grafiken und Soundeffekte für eine reichere Spielerfahrung wurden nicht hinzugefügt.
 - 🌍 **Erweiterung des Spielfelds**: Anpassbare Spielfeldgrößen oder verschiedene Spielfeldeinstellungen wurden nicht mehr umgesetzt.
